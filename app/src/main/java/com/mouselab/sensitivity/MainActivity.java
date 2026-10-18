@@ -41,7 +41,18 @@ public class MainActivity extends Activity {
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (webView != null) {
+        if (webView != null && event.getKeyCode() != KeyEvent.KEYCODE_BACK) {
+            int code = event.getUnicodeChar();
+            String key = code > 0 ? new String(Character.toChars(code)) : null;
+
+            if (key != null && !key.isEmpty()) {
+                key = key.toLowerCase(java.util.Locale.ROOT);
+                String js = "window.nativeKeyEvent && window.nativeKeyEvent("
+                    + org.json.JSONObject.quote(key) + ","
+                    + (event.getAction() == KeyEvent.ACTION_DOWN ? "true" : "false")
+                    + ")";
+                webView.evaluateJavascript(js, null);
+            }
             webView.requestFocus();
         }
         return super.dispatchKeyEvent(event);

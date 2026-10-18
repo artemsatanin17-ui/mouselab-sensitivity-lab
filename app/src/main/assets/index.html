@@ -152,6 +152,17 @@ const keyNames={' ':'SPACE','Escape':'ESC','Shift':'SHIFT','Control':'CTRL','Alt
 const held=new Set();
 function keyLabel(k){return keyNames[k]||k.toUpperCase()}
 function markKey(k,on){document.querySelectorAll('.key').forEach(el=>{const val=el.dataset.key;el.classList.toggle('pressed',val.toLowerCase()===k.toLowerCase()||(val===' '&&k===' '));});}
+window.nativeKeyEvent=function(k,on){
+  if(on){
+    held.add(k);
+    markKey(k,true);
+    $('lastkey').textContent=keyLabel(k);
+  }else{
+    held.delete(k);
+    markKey(k,false);
+  }
+};
+
 window.addEventListener('keydown',e=>{
  if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName))return;
  held.add(e.key);markKey(e.key,true);$('lastkey').textContent=keyLabel(e.key);
