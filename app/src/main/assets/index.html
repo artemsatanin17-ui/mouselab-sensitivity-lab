@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101116">
+<title>MouseLab × Sensitivity Lab</title>
+<style>
+:root{--bg:#0d0e13;--panel:#171922;--panel2:#1e202b;--line:#303342;--text:#f3f4f8;--muted:#a6a9ba;--red:#ff4655;--red2:#ff6874;--green:#65e6a6;--blue:#78a8ff}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 80% -10%,#38202a 0,transparent 32%),var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.app{max-width:1050px;margin:auto;padding:18px 14px 38px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.brand{display:flex;align-items:center;gap:11px}
+.logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(145deg,var(--red),#9b2032);display:grid;place-items:center;font-weight:900;font-size:19px;box-shadow:0 8px 28px #ff465528}
+h1{font-size:20px;line-height:1.15;margin:0}
+.sub{font-size:12px;color:var(--muted);margin-top:4px}
+.pill{border:1px solid var(--line);border-radius:99px;padding:6px 10px;color:var(--muted);font-size:12px;white-space:nowrap}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.tab{border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:12px;border-radius:13px;font-weight:750}
+.tab.active{background:#331820;border-color:#8f303d;color:white}
+.section{display:none}.section.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{background:linear-gradient(180deg,#1a1c26,#151720);border:1px solid var(--line);border-radius:17px;padding:15px;min-width:0}
+.card h2{font-size:16px;margin:0 0 5px}
+.card p{font-size:13px;color:var(--muted);margin:0 0 12px}
+.full{grid-column:1/-1}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kpi{padding:11px;background:var(--panel2);border-radius:12px}
+.kpi b{display:block;font-size:21px;font-variant-numeric:tabular-nums}
+.kpi span{font-size:11px;color:var(--muted)}
+.keygrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.key{background:#252835;border:1px solid #3b3e50;border-radius:9px;padding:9px 2px;text-align:center;font-size:12px;font-weight:750;min-height:40px}
+.key.pressed{background:#54232d;border-color:var(--red);box-shadow:inset 0 0 0 1px var(--red);color:#fff}
+.action{background:var(--red);color:white;border:0;border-radius:11px;padding:10px 13px;font-weight:750}
+.action.secondary{background:#282b38;border:1px solid #414557}
+.action:active{transform:scale(.98)}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.row.spread{justify-content:space-between}
+label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}
+input[type=range]{width:100%;accent-color:var(--red)}
+input[type=text],select{width:100%;background:#101219;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px}
+.field{margin:12px 0}
+.value{font-weight:800;font-variant-numeric:tabular-nums}
+.status{font-size:12px;color:var(--green)}
+.muted{color:var(--muted)}
+.testpad{height:160px;border:1px dashed #53576b;background:repeating-linear-gradient(45deg,#151720,#151720 10px,#191b25 10px,#191b25 20px);border-radius:13px;display:grid;place-items:center;text-align:center;touch-action:pan-y;user-select:none}
+.testpad.hot{border-color:var(--red);background:#28151c}
+.cross-area{height:130px;background:#0b0c11;border:1px solid #343746;border-radius:13px;display:grid;place-items:center;position:relative;overflow:hidden}
+.cross{position:relative;width:44px;height:44px}
+.cross:before,.cross:after{content:"";position:absolute;background:var(--cross-color,#fff);left:50%;top:50%;transform:translate(-50%,-50%)}
+.cross:before{width:var(--cross-len,24px);height:var(--cross-thick,3px)}
+.cross:after{height:var(--cross-len,24px);width:var(--cross-thick,3px)}
+.cross-dot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:var(--dot,0px);height:var(--dot,0px);background:var(--cross-color,#fff);border-radius:50%}
+.aimfield{height:250px;position:relative;overflow:hidden;border:1px solid var(--line);border-radius:13px;background:radial-gradient(circle at center,#202331,#101116 70%);touch-action:manipulation}
+.target{position:absolute;width:32px;height:32px;border-radius:50%;border:4px solid #ff9aa2;background:var(--red);box-shadow:0 0 0 5px #ff465522,0 0 20px #ff465544;transform:translate(-50%,-50%);cursor:crosshair}
+.target:after{content:"";position:absolute;inset:7px;border:1px solid #fff;border-radius:50%}
+.note{border-left:3px solid #806f37;background:#292516;padding:10px 12px;border-radius:0 10px 10px 0;color:#e4d9ae;font-size:12px}
+.footer{text-align:center;color:#737789;font-size:11px;margin-top:18px}
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+@media(max-width:640px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.app{padding:14px 10px 28px}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.kpi b{font-size:18px}.pill{display:none}.aimfield{height:230px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+ <div class="brand"><div class="logo">ML</div><div><h1>MouseLab <span style="color:var(--red)">×</span> Sensitivity</h1><div class="sub">ИНСТРУМЕНТЫ ДЛЯ КЛАВЫ, МЫШИ И STANDOFF 2</div></div></div>
+ <div class="pill">Локально • без аккаунта</div>
+</header>
+<div class="tabs">
+ <button class="tab active" data-tab="mouse">🖱️ MouseLab</button>
+ <button class="tab" data-tab="sens">🎯 Sensitivity Lab</button>
+</div>
+
+<section id="mouse" class="section active">
+ <div class="grid">
+  <div class="card">
+   <h2>Клавиатура</h2><p>Нажимай клавиши — подсветка покажет, какие события получает браузер.</p>
+   <div class="keygrid" id="keygrid">
+    <div class="key" data-key="Escape">ESC</div><div class="key" data-key="1">1</div><div class="key" data-key="2">2</div><div class="key" data-key="3">3</div><div class="key" data-key="4">4</div><div class="key" data-key="5">5</div>
+    <div class="key" data-key="Tab">TAB</div><div class="key" data-key="q">Q</div><div class="key" data-key="w">W</div><div class="key" data-key="e">E</div><div class="key" data-key="r">R</div><div class="key" data-key="t">T</div>
+    <div class="key" data-key="Shift">SHIFT</div><div class="key" data-key="a">A</div><div class="key" data-key="s">S</div><div class="key" data-key="d">D</div><div class="key" data-key="f">F</div><div class="key" data-key="g">G</div>
+    <div class="key" data-key="Control">CTRL</div><div class="key" data-key="z">Z</div><div class="key" data-key="x">X</div><div class="key" data-key="c">C</div><div class="key" data-key="v">V</div><div class="key" data-key=" ">SPACE</div>
+   </div>
+   <div class="row spread" style="margin-top:12px"><span class="muted" style="font-size:12px">Последняя клавиша: <b id="lastkey">—</b></span><button class="action secondary" id="clearKeys">Сброс</button></div>
+  </div>
+  <div class="card">
+   <h2>Движение и клики</h2><p>Наведи мышь на область и двигай ею, нажимай кнопки и крути колесо.</p>
+   <div class="testpad" id="mousepad"><div><b>ПРОВЕРЬ МЫШЬ</b><br><span class="muted" style="font-size:12px">движение • клики • колесо</span></div></div>
+   <div class="kpis" style="margin-top:10px">
+    <div class="kpi"><b id="moves">0</b><span>движения</span></div><div class="kpi"><b id="clicks">0</b><span>клики</span></div><div class="kpi"><b id="wheel">0</b><span>колесо</span></div>
+   </div>
+   <div class="row" style="margin-top:10px"><span class="muted" style="font-size:12px">Последняя кнопка: <b id="lastbutton">—</b></span></div>
+  </div>
+  <div class="card full">
+   <h2>События мыши</h2><p>Приблизительная частота событий, полученных страницей. Это не аппаратная частота опроса мыши и не измерение задержки.</p>
+   <div class="kpis">
+    <div class="kpi"><b id="rate">—</b><span>событий/с (оценка)</span></div>
+    <div class="kpi"><b id="coords">—</b><span>координаты указателя</span></div>
+    <div class="kpi"><b id="buttons">—</b><span>кнопки мыши</span></div>
+   </div>
+   <div class="row" style="margin-top:12px"><button class="action secondary" id="resetMouse">Сбросить счётчики</button><span class="status" id="mouseStatus">Ожидание ввода</span></div>
+  </div>
+ </div>
+</section>
+
+<section id="sens" class="section">
+ <div class="grid">
+  <div class="card">
+   <h2>Профиль Standoff 2</h2><p>Сохраняй свои значения и сравнивай ощущения. Эти настройки не применяются автоматически к игре.</p>
+   <div class="field"><label for="profileName">Название профиля</label><input id="profileName" type="text" maxlength="32" placeholder="Например, основная сенса"></div>
+   <div class="field"><label for="sensValue">Чувствительность: <span class="value" id="sensOut">1.00</span></label><input id="sensValue" type="range" min="0.1" max="5" step="0.05" value="1"></div>
+   <div class="field"><label for="scopeValue">Чувствительность при прицеле: <span class="value" id="scopeOut">1.00</span></label><input id="scopeValue" type="range" min="0.1" max="5" step="0.05" value="1"></div>
+   <div class="field"><label for="crossColor">Цвет прицела</label><select id="crossColor"><option value="#ffffff">Белый</option><option value="#65e6a6">Зелёный</option><option value="#78a8ff">Голубой</option><option value="#ff4655">Красный</option><option value="#ffe66d">Жёлтый</option></select></div>
+   <div class="field"><label for="crossLen">Длина линий: <span class="value" id="lenOut">24</span></label><input id="crossLen" type="range" min="8" max="40" value="24"></div>
+   <div class="field"><label for="crossThick">Толщина: <span class="value" id="thickOut">3</span></label><input id="crossThick" type="range" min="1" max="6" value="3"></div>
+   <div class="field"><label for="crossDot">Размер точки: <span class="value" id="dotOut">0</span></label><input id="crossDot" type="range" min="0" max="8" value="0"></div>
+   <div class="row"><button class="action" id="saveProfile">Сохранить профиль</button><button class="action secondary" id="exportProfile">Экспорт JSON</button></div>
+   <div class="field"><label for="profiles">Сохранённые профили</label><select id="profiles"><option value="">— выбери профиль —</option></select></div>
+   <div class="row"><button class="action secondary" id="loadProfile">Загрузить</button><button class="action secondary" id="deleteProfile">Удалить</button></div>
+   <div id="profileMsg" class="status" style="margin-top:9px"></div>
+  </div>
+  <div class="card">
+   <h2>Предпросмотр прицела</h2><p>Это визуальный макет для подбора вида, не меняющий прицел внутри игры.</p>
+   <div class="cross-area"><div class="cross" id="cross"><div class="cross-dot" id="crossDotEl"></div></div></div>
+   <hr>
+   <h2>Тренировка наведения</h2><p>Попадай по целям мышью или касанием экрана. Тренировка работает отдельно от Standoff 2.</p>
+   <div class="kpis">
+    <div class="kpi"><b id="aimHits">0</b><span>попадания</span></div><div class="kpi"><b id="aimMiss">0</b><span>промахи</span></div><div class="kpi"><b id="aimAcc">—</b><span>точность</span></div>
+   </div>
+   <div class="row" style="margin:10px 0"><button class="action" id="startAim">Начать 30 сек.</button><button class="action secondary" id="stopAim">Стоп</button><span class="value" id="aimTime">30.0 с</span></div>
+   <div class="aimfield" id="aimfield"><div class="muted" id="aimHint" style="position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:20px">Нажми «Начать», чтобы появились цели</div></div>
+   <div class="row spread" style="margin-top:10px"><span class="muted" style="font-size:12px">Рекорд попаданий: <b id="bestHits">0</b></span><button class="action secondary" id="resetAim">Сбросить статистику</button></div>
+  </div>
+  <div class="card full">
+   <h2>Подсказки для подбора сенсы</h2>
+   <div class="note">Меняй только один параметр за раз и сравнивай результаты в одинаковых условиях. Браузерный тренажёр помогает сравнивать настройки внутри тренажёра, но чувствительность здесь не равна чувствительности Standoff 2.</div>
+  </div>
+ </div>
+</section>
+<div class="footer">MouseLab × Sensitivity Lab • автономный прототип • данные хранятся в этом браузере</div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{
+ document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b===btn));
+ document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===btn.dataset.tab));
+}));
+const keyNames={' ':'SPACE','Escape':'ESC','Shift':'SHIFT','Control':'CTRL','Alt':'ALT','Tab':'TAB','Enter':'ENTER','ArrowUp':'↑','ArrowDown':'↓','ArrowLeft':'←','ArrowRight':'→'};
+const held=new Set();
+function keyLabel(k){return keyNames[k]||k.toUpperCase()}
+function markKey(k,on){document.querySelectorAll('.key').forEach(el=>{const val=el.dataset.key;el.classList.toggle('pressed',val.toLowerCase()===k.toLowerCase()||(val===' '&&k===' '));});}
+window.addEventListener('keydown',e=>{
+ if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName))return;
+ held.add(e.key);markKey(e.key,true);$('lastkey').textContent=keyLabel(e.key);
+ if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))e.preventDefault();
+});
+window.addEventListener('keyup',e=>{held.delete(e.key);markKey(e.key,false)});
+window.addEventListener('blur',()=>{held.clear();document.querySelectorAll('.key').forEach(el=>el.classList.remove('pressed'))});
+$('clearKeys').addEventListener('click',()=>{held.clear();document.querySelectorAll('.key').forEach(el=>el.classList.remove('pressed'));$('lastkey').textContent='—'});
+let moves=0,clicks=0,wheel=0,events=0,windowStart=performance.now(),rate=0;
+const pad=$('mousepad');
+pad.addEventListener('pointermove',e=>{moves++;events++;$('moves').textContent=moves;$('coords').textContent=Math.round(e.clientX)+', '+Math.round(e.clientY);$('buttons').textContent=e.buttons});
+pad.addEventListener('pointerdown',e=>{clicks++;$('clicks').textContent=clicks;$('lastbutton').textContent=['левая','средняя','правая','кнопка 4','кнопка 5'][e.button]||('кнопка '+e.button);pad.classList.add('hot');$('mouseStatus').textContent='Получен клик';});
+pad.addEventListener('pointerup',()=>pad.classList.remove('hot'));
+pad.addEventListener('pointerleave',()=>pad.classList.remove('hot'));
+pad.addEventListener('contextmenu',e=>e.preventDefault());
+pad.addEventListener('wheel',e=>{wheel+=Math.sign(e.deltaY);$('wheel').textContent=wheel;$('mouseStatus').textContent='Получено событие колеса';e.preventDefault()},{passive:false});
+setInterval(()=>{const now=performance.now(),dt=(now-windowStart)/1000;rate=dt>0?Math.round(events/dt):0;$('rate').textContent=events?rate:'—';events=0;windowStart=now},1000);
+$('resetMouse').addEventListener('click',()=>{moves=clicks=wheel=events=0;['moves','clicks','wheel'].forEach(id=>$(id).textContent='0');$('rate').textContent='—';$('coords').textContent='—';$('buttons').textContent='—';$('lastbutton').textContent='—';$('mouseStatus').textContent='Счётчики сброшены'});
+const fields=['profileName','sensValue','scopeValue','crossColor','crossLen','crossThick','crossDot'];
+function updateCross(){
+ $('sensOut').textContent=Number($('sensValue').value).toFixed(2);$('scopeOut').textContent=Number($('scopeValue').value).toFixed(2);
+ $('lenOut').textContent=$('crossLen').value;$('thickOut').textContent=$('crossThick').value;$('dotOut').textContent=$('crossDot').value;
+ $('cross').style.setProperty('--cross-color',$('crossColor').value);$('cross').style.setProperty('--cross-len',$('crossLen').value+'px');$('cross').style.setProperty('--cross-thick',$('crossThick').value+'px');$('cross').style.setProperty('--dot',$('crossDot').value+'px');
+}
+['sensValue','scopeValue','crossColor','crossLen','crossThick','crossDot'].forEach(id=>$(id).addEventListener('input',updateCross));updateCross();
+const STORAGE='mouselab_profiles_v1';
+function getProfiles(){try{return JSON.parse(localStorage.getItem(STORAGE)||'{}')}catch(e){return {}}}
+function setProfiles(p){try{localStorage.setItem(STORAGE,JSON.stringify(p));return true}catch(e){return false}}
+function currentProfile(){return {name:$('profileName').value.trim()||'Мой профиль',sens:$('sensValue').value,scope:$('scopeValue').value,color:$('crossColor').value,len:$('crossLen').value,thick:$('crossThick').value,dot:$('crossDot').value,updated:new Date().toISOString()}}
+function refreshProfiles(selectName=''){const p=getProfiles();$('profiles').innerHTML='<option value="">— выбери профиль —</option>';Object.keys(p).sort().forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;$('profiles').appendChild(o)});if(selectName&&p[selectName])$('profiles').value=selectName}
+$('saveProfile').addEventListener('click',()=>{const p=getProfiles(),data=currentProfile();p[data.name]=data;if(setProfiles(p)){refreshProfiles(data.name);$('profileMsg').textContent='Профиль сохранён на этом устройстве.'}else $('profileMsg').textContent='Не удалось сохранить. Возможно, хранилище браузера недоступно.'});
+$('loadProfile').addEventListener('click',()=>{const name=$('profiles').value,p=getProfiles()[name];if(!p){$('profileMsg').textContent='Сначала выбери профиль.';return} $('profileName').value=p.name;$('sensValue').value=p.sens;$('scopeValue').value=p.scope;$('crossColor').value=p.color;$('crossLen').value=p.len;$('crossThick').value=p.thick;$('crossDot').value=p.dot;updateCross();$('profileMsg').textContent='Профиль загружен.'});
+$('deleteProfile').addEventListener('click',()=>{const name=$('profiles').value;if(!name){$('profileMsg').textContent='Сначала выбери профиль.';return}const p=getProfiles();delete p[name];setProfiles(p);refreshProfiles();$('profileMsg').textContent='Профиль удалён.'});
+$('exportProfile').addEventListener('click',()=>{const data=currentProfile(),blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='mouselab-profile.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);$('profileMsg').textContent='Экспортирован JSON-файл текущего профиля.'});
+refreshProfiles();
+let aimRunning=false,aimTimer=null,aimStart=0,aimDuration=30000,aimHits=0,aimMiss=0,best=Number(localStorage.getItem('mouselab_best')||0),target=null;
+$('bestHits').textContent=best;
+function accuracy(){const total=aimHits+aimMiss;$('aimAcc').textContent=total?Math.round(aimHits/total*100)+'%':'—'}
+function updateAimStats(){ $('aimHits').textContent=aimHits;$('aimMiss').textContent=aimMiss;accuracy();if(aimHits>best){best=aimHits;$('bestHits').textContent=best;try{localStorage.setItem('mouselab_best',String(best))}catch(e){}}}
+function spawnTarget(){if(!aimRunning)return;const field=$('aimfield');field.querySelectorAll('.target').forEach(t=>t.remove());$('aimHint').style.display='none';target=document.createElement('button');target.className='target';target.setAttribute('aria-label','Цель');const rect=field.getBoundingClientRect(),padsize=22;target.style.left=(padsize+Math.random()*Math.max(1,rect.width-padsize*2))+'px';target.style.top=(padsize+Math.random()*Math.max(1,rect.height-padsize*2))+'px';target.addEventListener('pointerdown',e=>{e.preventDefault();if(!aimRunning)return;aimHits++;updateAimStats();spawnTarget()});field.appendChild(target)}
+function stopAim(){aimRunning=false;if(aimTimer)clearInterval(aimTimer);aimTimer=null;$('aimfield').querySelectorAll('.target').forEach(t=>t.remove());$('aimHint').style.display='grid';$('aimHint').textContent='Раунд завершён. Попадания: '+aimHits+' • промахи: '+aimMiss;$('startAim').disabled=false}
+$('startAim').addEventListener('click',()=>{if(aimRunning)stopAim();aimHits=0;aimMiss=0;updateAimStats();aimRunning=true;aimStart=performance.now();$('startAim').disabled=true;spawnTarget();if(aimTimer)clearInterval(aimTimer);aimTimer=setInterval(()=>{const remain=Math.max(0,aimDuration-(performance.now()-aimStart));$('aimTime').textContent=(remain/1000).toFixed(1)+' с';if(remain<=0)stopAim()},100)});
+$('stopAim').addEventListener('click',stopAim);
+$('aimfield').addEventListener('pointerdown',e=>{if(!aimRunning||e.target.classList.contains('target'))return;aimMiss++;updateAimStats()});
+$('resetAim').addEventListener('click',()=>{aimHits=0;aimMiss=0;best=0;try{localStorage.removeItem('mouselab_best')}catch(e){}$('bestHits').textContent='0';updateAimStats();if(aimRunning)stopAim();$('aimHint').textContent='Статистика сброшена. Нажми «Начать».'});
+</script>
+</body>
+</html>
