@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>MouseLab 2.0</title>
+<style>
+:root{color-scheme:dark;--bg:#101116;--panel:#1b1d26;--red:#ff4655;--muted:#a4a8b8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#f5f5f7;font:14px Arial,sans-serif;padding:14px}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+h1{font-size:21px;margin:0}h2{font-size:16px;margin:0 0 12px}
+a,button,select{color:white;background:#292c37;border:1px solid #3b3e4b;border-radius:10px;padding:10px;text-decoration:none;font-size:13px}
+button:active{background:var(--red)}
+.panel{background:var(--panel);border:1px solid #292c36;border-radius:14px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.stat{background:#12141b;border-radius:10px;padding:10px;text-align:center}
+.num{font-size:21px;font-weight:bold;color:var(--red);margin-top:5px}
+#arena{height:310px;position:relative;overflow:hidden;background:#101116;border:1px solid #393c48;border-radius:12px;touch-action:manipulation}
+#target{display:none;position:absolute;width:38px;height:38px;border-radius:50%;background:var(--red);border:4px solid #ff9aa2;box-shadow:0 0 18px #ff465566;touch-action:manipulation}
+#target:after{content:"";position:absolute;inset:9px;border:1px solid white;border-radius:50%}
+.muted{color:var(--muted);font-size:12px;line-height:1.5}
+.wide{width:100%;margin-top:8px}
+#heat{width:100%;height:150px;background:#101116;border-radius:8px}
+.history{padding:8px 0;border-bottom:1px solid #30323c}
+@media(orientation:landscape){body{padding:10px}.layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:12px}#arena{height:calc(100dvh - 190px);min-height:190px}.stats{margin:0 0 10px}}
+</style>
+</head>
+<body>
+<header><h1>🧪 MouseLab 2.0</h1><a href="index.html">← Назад</a></header>
+<div class="layout">
+<div>
+<section class="panel">
+<h2>Тренировка фликов</h2>
+<div class="row">
+<label>Длительность <select id="duration"><option value="30">30 сек</option><option value="60">60 сек</option><option value="15">15 сек</option></select></label>
+<label>Размер цели <select id="size"><option value="38">Обычный</option><option value="24">Маленький</option><option value="54">Большой</option></select></label>
+</div>
+<div class="stats">
+<div class="stat">Попадания<div class="num" id="hits">0</div></div>
+<div class="stat">Промахи<div class="num" id="misses">0</div></div>
+<div class="stat">Точность<div class="num" id="accuracy">—</div></div>
+</div>
+<div id="arena"><button id="target" aria-label="Цель"></button></div>
+<div class="row" style="margin-top:10px"><button id="start">▶ Начать</button><button id="stop">■ Стоп</button><span id="timer" class="muted">Готов к тренировке</span></div>
+<p class="muted">Нажимай на появляющуюся цель как можно быстрее. На телефоне нажимай пальцем, с мышью — кликай. Это тренировка внутри приложения, не управление игрой.</p>
+</section>
+<section class="panel">
+<h2>Тест движения на 360°</h2>
+<p class="muted">Проведи мышью или пальцем по шкале. Тест измеряет движение внутри этой страницы, а не реальный поворот камеры в Standoff 2.</p>
+<div id="turnpad" style="height:85px;background:#101116;border:1px solid #393c48;border-radius:10px;display:flex;align-items:center;justify-content:center;touch-action:pan-y;user-select:none">Веди мышью здесь ↔</div>
+<div class="stats"><div class="stat">Движение<div class="num" id="distance">0</div></div><div class="stat">Условный угол<div class="num" id="angle">0°</div></div><div class="stat">Калибровка<div class="num" id="cal">—</div></div></div>
+<button id="resetTurn">Сбросить тест</button>
+</section>
+</div>
+<div>
+<section class="panel">
+<h2>История тренировок</h2>
+<div id="history" class="muted">Пока нет результатов.</div>
+<button class="wide" id="export">Экспорт результатов CSV</button>
+<button class="wide" id="clear">Очистить историю</button>
+</section>
+<section class="panel">
+<h2>Карта промахов</h2>
+<canvas id="heat" width="600" height="220"></canvas>
+<p class="muted">Красные точки показывают места, где ты промахнулся в этой тренировке.</p>
+</section>
+<section class="panel">
+<h2>Что означают результаты?</h2>
+<p class="muted">Точность = попадания / все попытки. Сравнивай несколько тренировок при одинаковом размере цели. Эта версия пока не меняет чувствительность игры автоматически.</p>
+</section>
+</div>
+</div>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const arena=$('arena'),target=$('target');
+let running=false,hits=0,misses=0,started=0,clock=null,points=[];
+let history=JSON.parse(localStorage.getItem('ml2history')||'[]');
+function accuracy(){let n=hits+misses;return n?Math.round(hits/n*100)+'%':'—'}
+function update(){ $('hits').textContent=hits;$('misses').textContent=misses;$('accuracy').textContent=accuracy()}
+function place(){
+ const s=+$('size').value;target.style.width=s+'px';target.style.height=s+'px';
+ const x=Math.random()*Math.max(1,arena.clientWidth-s),y=Math.random()*Math.max(1,arena.clientHeight-s);
+ target.style.left=x+'px';target.style.top=y+'px';target.style.display='block';
+}
+function end(){
+ if(!running)return;running=false;clearInterval(clock);target.style.display='none';
+ const elapsed=Math.min(+$('duration').value,Math.round((Date.now()-started)/1000));
+ const item={date:new Date().toLocaleString(),hits,misses,accuracy:accuracy(),seconds:elapsed};
+ history.unshift(item);history=history.slice(0,50);localStorage.setItem('ml2history',JSON.stringify(history));
+ $('timer').textContent='Завершено: '+elapsed+' сек';renderHistory();drawHeat();
+}
+target.addEventListener('pointerdown',e=>{e.preventDefault();if(!running)return;hits++;points.push({x:parseFloat(target.style.left)+target.offsetWidth/2,y:parseFloat(target.style.top)+target.offsetHeight/2,hit:true});update();place()});
+arena.addEventListener('pointerdown',e=>{if(!running||e.target===target)return;misses++;const r=arena.getBoundingClientRect();points.push({x:e.clientX-r.left,y:e.clientY-r.top,hit:false});update();drawHeat()});
+$('start').onclick=()=>{if(running)return;running=true;hits=0;misses=0;points=[];started=Date.now();update();$('timer').textContent='Тренировка идёт';place();clock=setInterval(()=>{let left=+$('duration').value-Math.floor((Date.now()-started)/1000);$('timer').textContent='Осталось: '+Math.max(0,left)+' сек';if(left<=0)end()},200)};
+$('stop').onclick=end;
+function renderHistory(){$('history').innerHTML=history.length?history.map(h=>'<div class="history">'+h.date+'<br>Попадания: '+h.hits+' · Промахи: '+h.misses+' · Точность: '+h.accuracy+'</div>').join(''):'Пока нет результатов.'}
+function drawHeat(){const c=$('heat'),ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#101116';ctx.fillRect(0,0,c.width,c.height);let r=arena.getBoundingClientRect();points.filter(p=>!p.hit).forEach(p=>{ctx.beginPath();ctx.fillStyle='#ff4655aa';ctx.arc(p.x/Math.max(1,r.width)*c.width,p.y/Math.max(1,r.height)*c.height,9,0,Math.PI*2);ctx.fill()})}
+$('clear').onclick=()=>{history=[];localStorage.removeItem('ml2history');renderHistory()};
+$('export').onclick=()=>{const rows=[['date','hits','misses','accuracy','seconds'],...history.map(h=>[h.date,h.hits,h.misses,h.accuracy,h.seconds])];const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='mouselab-results.csv';a.click();URL.revokeObjectURL(a.href)};
+let drawing=false,lastX=0,travel=0;
+const pad=$('turnpad');
+pad.addEventListener('pointerdown',e=>{drawing=true;lastX=e.clientX;pad.setPointerCapture(e.pointerId)});
+pad.addEventListener('pointermove',e=>{if(!drawing)return;travel+=Math.abs(e.clientX-lastX);lastX=e.clientX;$('distance').textContent=Math.round(travel)+' px';$('angle').textContent=Math.round(travel/4)+'°';$('cal').textContent=travel?'Учебный':'—'});
+pad.addEventListener('pointerup',()=>drawing=false);pad.addEventListener('pointercancel',()=>drawing=false);
+$('resetTurn').onclick=()=>{travel=0;$('distance').textContent='0';$('angle').textContent='0°';$('cal').textContent='—'};
+renderHistory();drawHeat();update();
+})();
+</script>
+</body>
+</html>
