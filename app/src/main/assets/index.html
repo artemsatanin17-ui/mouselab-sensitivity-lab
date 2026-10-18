@@ -108,6 +108,34 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 
 <section id="sens" class="section">
  <div class="grid">
+  <div class="card full" id="calibrationCard">
+   <h2>🎯 Мастер настройки сенсы</h2>
+   <p>Настраиваем Standoff 2 под твою мышь. DPI знать необязательно.</p>
+   <div class="note">Важно: MouseLab не меняет настройки игры автоматически. Меняй только обычную сенсу, проверяй её в игре и не трогай остальные параметры одновременно.</div>
+   <div class="field">
+    <label for="calSens">Шаг 1. Твоя обычная сенса из игры</label>
+    <input id="calSens" type="number" min="0.1" max="5" step="0.05" placeholder="Введи точное число">
+   </div>
+   <div class="field">
+    <label for="calScope">Сенса при прицеле</label>
+    <input id="calScope" type="number" min="0.1" max="5" step="0.05" placeholder="Введи точное число">
+   </div>
+   <button class="action" id="calBegin">Начать настройку</button>
+   <div id="calMessage" class="note" style="margin-top:12px">Сначала посмотри точные числа в настройках Standoff 2. «Средняя» — не конкретное значение.</div>
+   <hr>
+   <div class="field">
+    <label for="calFeeling">Шаг 2. После проверки в игре что чаще происходит?</label>
+    <select id="calFeeling">
+     <option value="">Выбери результат проверки</option>
+     <option value="over">Перелетаю через цель</option>
+     <option value="under">Не доворачиваю до цели</option>
+     <option value="good">Попадаю нормально, сенса удобная</option>
+     <option value="mixed">То перелетаю, то не доворачиваю</option>
+    </select>
+   </div>
+   <button class="action" id="calCalculate">Что изменить?</button>
+   <div id="calResult" style="margin-top:12px"></div>
+  </div>
   <div class="card">
    <h2>Профиль Standoff 2</h2><p>Сохраняй свои значения и сравнивай ощущения. Эти настройки не применяются автоматически к игре.</p>
    <div class="field"><label for="profileName">Название профиля</label><input id="profileName" type="text" maxlength="32" placeholder="Например, основная сенса"></div>
@@ -188,6 +216,43 @@ function updateCross(){
  $('cross').style.setProperty('--cross-color',$('crossColor').value);$('cross').style.setProperty('--cross-len',$('crossLen').value+'px');$('cross').style.setProperty('--cross-thick',$('crossThick').value+'px');$('cross').style.setProperty('--dot',$('crossDot').value+'px');
 }
 ['sensValue','scopeValue','crossColor','crossLen','crossThick','crossDot'].forEach(id=>$(id).addEventListener('input',updateCross));updateCross();
+
+const calNum = id => Number($(id).value);
+$('calBegin').addEventListener('click',()=>{
+ const a=calNum('calSens'),b=calNum('calScope');
+ if(!Number.isFinite(a)||!Number.isFinite(b)||a<0.1||a>5||b<0.1||b>5){
+  $('calMessage').textContent='Введи оба точных значения из игры — от 0,1 до 5.';
+  return;
+ }
+ $('sensValue').value=a;
+ $('scopeValue').value=b;
+ updateCross();
+ $('calMessage').textContent='Исходные значения записаны. Зайди в Standoff 2 и сделай 10 одинаковых переводов прицела между целями. Не меняй другие настройки. Затем выбери ниже, что чаще происходило.';
+ $('calResult').textContent='Пока ничего не изменено в самой игре.';
+});
+$('calCalculate').addEventListener('click',()=>{
+ const a=calNum('calSens'),b=calNum('calScope'),f=$('calFeeling').value;
+ if(!Number.isFinite(a)||!Number.isFinite(b)||a<0.1||a>5||b<0.1||b>5){
+  $('calResult').textContent='Сначала введи точные значения сенсы и нажми «Начать настройку».';
+  return;
+ }
+ if(!f){$('calResult').textContent='Сначала выбери результат проверки в игре.';return}
+ let n=a,why='';
+ if(f==='over'){n=Math.max(0.1,Math.round(a*0.9*100)/100);why='Ты перелетаешь цель. Попробуй снизить обычную сенсу примерно на 10%.'}
+ if(f==='under'){n=Math.min(5,Math.round(a*1.1*100)/100);why='Не хватает поворота. Попробуй повысить обычную сенсу примерно на 10%.'}
+ if(f==='good'){why='Пока оставь сенсу как есть. Проверь её ещё в одном раунде.'}
+ if(f==='mixed'){why='Результат нестабильный. Повтори проверку в похожих условиях, пока не меняй сенсу.'}
+ $('calResult').innerHTML='<div class="note">'+why+'</div><p>Текущая обычная сенса: <b>'+a.toFixed(2)+'</b><br>Следующий вариант: <b>'+n.toFixed(2)+'</b><br>Сенсу при прицеле пока оставляем: <b>'+b.toFixed(2)+'</b>.</p><button class="action" id="calApply">Подставить вариант в профиль</button><p class="muted">Новое значение нужно вручную выставить в Standoff 2. Это стартовая рекомендация, не гарантия идеальной сенсы.</p>';
+ $('calApply').addEventListener('click',()=>{
+  $('sensValue').value=n;
+  $('scopeValue').value=b;
+  $('calSens').value=n;
+  updateCross();
+  $('calMessage').textContent='Вариант подставлен в профиль MouseLab. Установи '+n.toFixed(2)+' в игре и повтори проверку. За один раз меняем только обычную сенсу.';
+ });
+});
+
+
 const STORAGE='mouselab_profiles_v1';
 function getProfiles(){try{return JSON.parse(localStorage.getItem(STORAGE)||'{}')}catch(e){return {}}}
 function setProfiles(p){try{localStorage.setItem(STORAGE,JSON.stringify(p));return true}catch(e){return false}}
